@@ -7,6 +7,12 @@
       </div>
     </div>
     <div style="position:relative;left:600px;top:280px">
+      <div>
+        <button @click="PullBack" v-show="!gameOver" v-bind:disabled="moveHistory.length==0">悔棋</button>
+      </div>
+      <div>
+        <button @click="init">重来</button>
+      </div>
       <span style="color:red" v-if="runComp">红方走</span>
       <span style="color:#000" v-if="!runComp">黑方走</span>
     </div>
@@ -22,20 +28,39 @@ export default {
       runItem:{},     //选中将要移动的单位
       running:false,      //为true时表示已选中要移动的单位,点击规则范围内的格子进行移动
       couldMove:[],     //选中要移动的单位后计算的可移动的格子
+      lastLostItem: {},     //被吃掉的棋子
+      moveHistory: [],     //移动记录
+      gameOver: false
     }
   },
   methods:{
     moveTo(x,y){   //移动到指定位置
       let id = (y-1)*9+x
-      console.log(x,y,id)
-      if(this.runItem.oldPlace!=id&&this.running){
+      if(this.runItem.id!=id&&this.running){
         if(this.TestPlace(id)){
-          this.setItem(this.runItem.oldPlace-1)
+          if(this.chessBorders[id-1].name){
+            this.lastLostItem = {id:id,name:this.chessBorders[id-1].name}
+            this.moveHistory.push({move:this.runItem,lost:this.lastLostItem})
+            if(this.chessBorders[id-1].name == '帅'){
+              this.gameOver = true
+            }
+            if(this.chessBorders[id-1].name == '将'){
+              this.gameOver = true
+            }
+          }else{
+            this.moveHistory.push({move:this.runItem,to:id})
+          }
+          this.setItem(this.runItem.id-1)
           this.setItem(id-1,this.runItem.name,this.runItem.color)
           this.running = false
           this.runComp = !this.runComp
           this.couldMove = []
-          this.runItem = {}
+          if(this.gameOver){
+            let text = this.runItem.color == "#000" ? '黑方胜':'红方胜'
+            setTimeout(() => {
+              alert(text)
+            }, 100);
+          }
         }else{
           console.log('移动的位置不合法')
         }
@@ -72,20 +97,20 @@ export default {
         let B = (name == "兵")? 1:2
         this.moveTypeB(x,y,id,B)
       }
-      console.log("couluMove: ",this.couldMove)
+      // console.log("couluMove: ",this.couldMove)
     },
-    moveTypeCP(x,y,C){    //‘車’和‘炮’的可移动位置
+    moveTypeCP(x,y,C){    //‘車’(C=1)和‘炮’(C=2)的可移动位置,
       let addID = 0
       //  从选中位置向左遍历
       for(let xaxis = x-1;xaxis>0;xaxis--){
         addID = (y-1)*9+xaxis
         if(this.chessBorders[addID-1].name){
           /*
-            '車',如果遍历的第一个非空位置的棋子颜色和选中棋子颜色不同,
-            将该位置加入可移动列表
+            '車',如果遍历到第一个非空位置的棋子颜色和选中棋子颜色不同,
+            将该位置加入可移动列表并跳出for循环
            *
             '炮',遍历到非空位置后,继续遍历其后面的格子,若第一个非空位置
-            的棋子颜色与选中棋子颜色不同,该位置加入可移动列表 
+            的棋子颜色与选中棋子颜色不同,该位置加入可移动列表跳出for循环
           */
           if(C == 1&&this.chessBorders[addID-1].color!=this.runItem.color){
             this.couldMove.push({id:addID,X:xaxis,Y:y})
@@ -141,7 +166,6 @@ export default {
               let extraID = (extraY-1)*9+x
               if(this.chessBorders[extraID-1].name){
                 if(this.chessBorders[extraID-1].color!=this.runItem.color){
-                  console.log("exPush:",extraID,x,extraY)
                   this.couldMove.push({id:extraID,X:x,Y:extraY})
                 }
                 break;
@@ -165,7 +189,6 @@ export default {
               let extraID = (extraY-1)*9+x
               if(this.chessBorders[extraID-1].name !== undefined){
                 if(this.chessBorders[extraID-1].color!=this.runItem.color){
-                  console.log("exPush:",extraID,x,extraY)
                   this.couldMove.push({id:extraID,X:x,Y:extraY})
                 }
                 break;
@@ -179,10 +202,10 @@ export default {
       }
     },
     moveTypeM(x,y,id){    //'馬'可移动位置
-      console.log("左一",this.chessBorders[id-2])
-      console.log("右一",this.chessBorders[id])
-      console.log("上一",this.chessBorders[id-10])
-      console.log("下一",this.chessBorders[id+8])
+      // console.log("左一",this.chessBorders[id-2])
+      // console.log("右一",this.chessBorders[id])
+      // console.log("上一",this.chessBorders[id-10])
+      // console.log("下一",this.chessBorders[id+8])
       //  向左遍历
       if(x>2&&!this.chessBorders[id-2].name){
         if(y>1){
@@ -238,7 +261,6 @@ export default {
     },
     moveTypeX(x,y,id){    //'相'可移动位置
       if(x==5){
-        console.log("x-17: ",this.chessBorders[id-17])
         //左下位置
         if(!this.chessBorders[id+7].name&&(!this.chessBorders[id+15].name||this.chessBorders[id+15].color!=this.runItem.color)){
           this.couldMove.push({id:id+16,X:x-2,Y:y+2})
@@ -389,7 +411,7 @@ export default {
     },
     selectItem(x,y,name,color){    //选择棋子
       let id = (y-1)*9+x
-      console.log(id,x,y,name,color)
+      // console.log(id,x,y,name,color)
       let trueSelect = false
       if(this.runComp&&color == "#ff0000"){
         trueSelect = true
@@ -397,12 +419,12 @@ export default {
       if(!this.runComp&&color == "#000"){
         trueSelect = true
       }
-      if(trueSelect){
+      if(trueSelect&&!this.gameOver){
         this.$set(this.chessBorders[id-1],"BDcolor",color)
         this.runItem = {
           name:name,
           color:color,
-          oldPlace:id,
+          id:id,
           X:x,
           Y:y
         }
@@ -410,7 +432,26 @@ export default {
         this.running = true;
       }
     },
+    PullBack(){     //悔棋
+      if(this.moveHistory.length){
+        let backItem = this.moveHistory.pop()
+        let C = backItem.move.color == "#000"? 1:"#000"
+        if(backItem.to){
+          this.setItem(backItem.to-1)
+        }else{
+          this.setItem(backItem.lost.id,backItem.lost.name,C)
+        }
+        this.setItem(backItem.move.id-1,backItem.move.name,backItem.move.color)
+        this.runComp = !this.runComp
+      }
+    },
     init(){   //初始化
+      this.chessBorders = []
+      for(let y=1;y<=10;y++){
+        for(let x=1;x<=9;x++){
+          this.chessBorders.push({X:x,Y:y})
+        }
+      }
       this.setItem(0,"車",1);
       this.setItem(1,"馬",1);
       this.setItem(2,"相",1);
@@ -443,21 +484,18 @@ export default {
       this.setItem(87,"象");
       this.setItem(88,"馬");
       this.setItem(89,"車");
+      this.moveHistory = []
+      this.runComp = true
     },
   },
   mounted(){
-    for(let y=1;y<=10;y++){
-      for(let x=1;x<=9;x++){
-        this.chessBorders.push({X:x,Y:y})
-      }
-    }
     this.init()
   },
   watch:{
     runItem:function(newItem,oldItem){    //重新选择棋子时,去掉上一个选中的边框颜色
-      if(oldItem.oldPlace&&oldItem.oldPlace!=newItem.oldPlace){
+      if(oldItem.id&&oldItem.id!=newItem.id){
         let c = '#aaaaaa'
-        let id = oldItem.oldPlace
+        let id = oldItem.id
         this.$set(this.chessBorders[id-1],"BDcolor",c)
       }
     }
@@ -491,10 +529,10 @@ export default {
   font-weight: bolder;
   font-family: "KaiTi";
   background-color: #eeeeee;
-  border:1px solid #bbbbbb;
+  border:3px solid #bbbbbb;
   position: relative;
-  top:3px;
-  left:3px;
+  top:2px;
+  left:2px;
   border-radius:50%;
 }
 </style>
