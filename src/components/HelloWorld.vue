@@ -8,10 +8,10 @@
     </div>
     <div style="position:relative;left:600px;top:280px">
       <div>
-        <button @click="PullBack" v-show="!gameOver" v-bind:disabled="moveHistory.length==0">悔棋</button>
+        <el-button @click="PullBack" v-show="!gameOver" v-bind:disabled="moveHistory.length==0">悔棋</el-button>
       </div>
       <div>
-        <button @click="init">重来</button>
+        <el-button @click="rePlay">重来</el-button>
       </div>
       <span style="color:red" v-if="runComp">红方走</span>
       <span style="color:#000" v-if="!runComp">黑方走</span>
@@ -487,6 +487,15 @@ export default {
       this.moveHistory = []
       this.runComp = true
     },
+    rePlay(){
+      this.$confirm ('放弃本局重新开始游戏?', '重来', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.init()
+      })
+    }
   },
   mounted(){
     this.init()
