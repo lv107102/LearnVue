@@ -11,7 +11,7 @@
         <el-button @click="PullBack" v-show="!gameOver" v-bind:disabled="moveHistory.length==0">悔棋</el-button>
       </div>
       <div>
-        <el-button @click="rePlay">重来</el-button>
+        <el-button @click="rePlay" style="margin:10px 0">重来</el-button>
       </div>
       <span style="color:red" v-if="runComp">红方走</span>
       <span style="color:#000" v-if="!runComp">黑方走</span>
@@ -34,6 +34,13 @@ export default {
     }
   },
   methods:{
+    /*
+      棋子id从1开始，
+      在使用setItem方法的时候是去改变chessBorder[]里的值，
+      所以id需要-1，
+      理想状态应该在setItem方法里id-1再赋值，
+      初期没有想到
+    */
     moveTo(x,y){   //移动到指定位置
       let id = (y-1)*9+x
       if(this.runItem.id!=id&&this.running){
@@ -109,7 +116,7 @@ export default {
             '車',如果遍历到第一个非空位置的棋子颜色和选中棋子颜色不同,
             将该位置加入可移动列表并跳出for循环
            *
-            '炮',遍历到非空位置后,继续遍历其后面的格子,若第一个非空位置
+            '炮',遍历到非空位置后,继续遍历其后面的格子,遇到第一个非空位置
             的棋子颜色与选中棋子颜色不同,该位置加入可移动列表跳出for循环
           */
           if(C == 1&&this.chessBorders[addID-1].color!=this.runItem.color){
@@ -439,7 +446,7 @@ export default {
         if(backItem.to){
           this.setItem(backItem.to-1)
         }else{
-          this.setItem(backItem.lost.id,backItem.lost.name,C)
+          this.setItem(backItem.lost.id-1,backItem.lost.name,C)
         }
         this.setItem(backItem.move.id-1,backItem.move.name,backItem.move.color)
         this.runComp = !this.runComp
