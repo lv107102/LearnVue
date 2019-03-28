@@ -361,6 +361,35 @@ export default {
       if((y==1||y==2||y==8||y==9)&&(!this.chessBorders[id+8].name||this.chessBorders[id+8].color!=this.runItem.color)){
         this.couldMove.push({id:id+9,X:x,Y:y+1})
       }
+      //特殊规则
+      if(y<4){
+        let i = id+9,
+            newY = y+1
+        for(i;i<90;){
+          if(this.chessBorders[i-1].name){
+            if(this.chessBorders[i-1].name == '将'){
+              this.couldMove.push({id:i,X:x,Y:newY})
+            }
+            break
+          }
+          i += 9
+          newY++
+        }
+      }
+      if(y>7){
+        let i = id-9,
+            newY = y-1
+        for(i;i>1;){
+          if(this.chessBorders[i-1].name){
+            if(this.chessBorders[i-1].name == '帅'){
+              this.couldMove.push({id:i,X:x,Y:newY})
+            }
+            break
+          }
+          i -= 9
+          newY--
+        }
+      }
     },
     moveTypeB(x,y,id,B){  //'兵'可移动位置,红色方B=1,黑色方B=2
       if(B==1){
@@ -459,6 +488,7 @@ export default {
           this.chessBorders.push({X:x,Y:y})
         }
       }
+      this.gameOver = false
       this.setItem(0,"車",1);
       this.setItem(1,"馬",1);
       this.setItem(2,"相",1);
